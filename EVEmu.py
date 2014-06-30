@@ -1,9 +1,8 @@
-import EVEmuServer
-import traceback, weakref, logging, stackless, stacklesssocket, socket
+import EVEServer, logging, stacklesssocket, socket, stackless
 
 def runServer(host, port):
 	global server
-	server = EVEmuServer.EVEmuServer(host, port)
+	server = EVEServer.EVEServer(host, port)
 
 	while 1:
 		stackless.run()
@@ -13,6 +12,6 @@ if __name__ == "__main__":
 	stacklesssocket.install()
 
 	try:
-		runServer("127.0.0.1", 26000)
+		runServer("0.0.0.0", 26000)
 	except KeyboardInterrupt:
 		logging.info("Server stopped manually")

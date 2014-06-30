@@ -1,6 +1,6 @@
 from struct import *
 from operator import itemgetter
-import logging
+import logging, pdb
 
 class EVEMarshal:
 	global EVEMarshalOpCodes
@@ -18,7 +18,10 @@ class EVEMarshal:
 			'double':		0x0A,
 			'zerodouble':	0x0B,
 			'longstring': 	0x13,
-			'tuple': 		0x14
+			'tuple': 		0x14,
+			'dict':			0x16,
+			'twotuple':		0x2C,
+			'utf8string':	0x2E
 		}
 
 	def marshal(self, data):
@@ -122,7 +125,6 @@ class EVEMarshal:
 			return 0.0
 		elif data[0] == self.EVEMarshalOpCodes['longstring']:
 			marshalledData = data[2:data[2]+1]
-			print(data)
 
 			return marshalledData
 		elif data[0] == self.EVEMarshalOpCodes['tuple']:
@@ -167,23 +169,161 @@ class EVEMarshal:
 			
 			return tuple(unmarshaledList)
 
-	def getMarshaledTupleSize(self, data):
-		if data[0] == self.EVEMarshalOpCodes['tuple']:
+		elif data[0] == self.EVEMarshalOpCodes['dict']:
+			# packed as value and then key
+			numElements = data[1]
+			element = 0
+			currentByte = 2
+			retDict = {}
+
+			while element < numElements:
+				#
+				# Get value
+				#
+
+				# All opcode only data sets
+				if data[currentByte] == self.EVEMarshalOpCodes['none'] or data[currentByte] == self.EVEMarshalOpCodes['minusone'] or data[currentByte] == self.EVEMarshalOpCodes['zero'] or data[currentByte] == self.EVEMarshalOpCodes['one'] or data[currentByte] == self.EVEMarshalOpCodes['zerodouble']:
+					value = self.unmarshal(data[currentByte:currentByte+1])
+					currentByte +=1
+				# One byte data
+				elif data[currentByte] == self.EVEMarshalOpCodes['byte']:
+					value = self.unmarshal(data[currentByte:currentByte+2])
+					currentByte += 2
+				# Two byte data
+				elif data[currentByte] == self.EVEMarshalOpCodes['short']:
+					value = self.unmarshal(data[currentByte:currentByte+3])
+					currentByte += 3
+				# 4 byte
+				elif data[currentByte] == self.EVEMarshalOpCodes['long']:
+					value = self.unmarshal(data[currentByte:currentByte+5])
+					currentByte += 5
+				# 8 byte
+				elif data[currentByte] == self.EVEMarshalOpCodes['longlong'] or data[currentByte] == self.EVEMarshalOpCodes['double']:
+					value = self.unmarshal(data[currentByte:currentByte+9])
+					currentByte += 9
+
+				elif data[currentByte] == self.EVEMarshalOpCodes['longstring'] or data[currentByte] == self.EVEMarshalOpCodes['utf8string']:
+					try:
+						value = data[currentByte+2:currentByte+data[currentByte+1]+2].decode("utf-8")
+					except UnicodeDecodeError:
+						value = data[currentByte+2:currentByte+data[currentByte+1]+2]
+					currentByte += data[currentByte+1] + 2
+				else:
+					logging.error("Can't decode dict value of type %s", data[currentByte])
+
+				#
+				# Get key
+				#
+
+				# All opcode only data sets
+				if data[currentByte] == self.EVEMarshalOpCodes['none'] or data[currentByte] == self.EVEMarshalOpCodes['minusone'] or data[currentByte] == self.EVEMarshalOpCodes['zero'] or data[currentByte] == self.EVEMarshalOpCodes['one'] or data[currentByte] == self.EVEMarshalOpCodes['zerodouble']:
+					key = self.unmarshal(data[currentByte:currentByte+1])
+					currentByte +=1
+				# One byte data
+				elif data[currentByte] == self.EVEMarshalOpCodes['byte']:
+					key = self.unmarshal(data[currentByte:currentByte+2])
+					currentByte += 2
+				# Two byte data
+				elif data[currentByte] == self.EVEMarshalOpCodes['short']:
+					key = self.unmarshal(data[currentByte:currentByte+3])
+					currentByte += 3
+				# 4 byte
+				elif data[currentByte] == self.EVEMarshalOpCodes['long']:
+					key = self.unmarshal(data[currentByte:currentByte+5])
+					currentByte += 5
+				# 8 byte
+				elif data[currentByte] == self.EVEMarshalOpCodes['longlong'] or data[currentByte] == self.EVEMarshalOpCodes['double']:
+					key = self.unmarshal(data[currentByte:currentByte+9])
+					currentByte += 9
+
+				elif data[currentByte] == self.EVEMarshalOpCodes['longstring'] or data[currentByte] == self.EVEMarshalOpCodes['utf8string']:
+					try:
+						#print(data)
+						key = data[currentByte+2:currentByte+data[currentByte+1]+2].decode("utf-8")
+					except UnicodeDecodeError:
+						key = data[currentByte+2:currentByte+data[currentByte+1]+2]
+					currentByte += data[currentByte+1] + 2
+				else:
+					logging.error("Can't decode dict key of type %s", data[currentByte])
+
+				# add to dict
+				retDict[key] = value
+				element += 1
+
+			return retDict
+
+		elif data[0] == self.EVEMarshalOpCodes['twotuple']:
+			unmarshaledList = list()
+
+			element = 0
+			currentByte = 1
+			while element < 2:
+				# All opcode only data sets
+				if data[currentByte] == self.EVEMarshalOpCodes['none'] or data[currentByte] == self.EVEMarshalOpCodes['minusone'] or data[currentByte] == self.EVEMarshalOpCodes['zero'] or data[currentByte] == self.EVEMarshalOpCodes['one'] or data[currentByte] == self.EVEMarshalOpCodes['zerodouble']:
+					unmarshaledList.append(self.unmarshal(data[currentByte:currentByte+1]))
+					currentByte +=1
+				# One byte data
+				elif data[currentByte] == self.EVEMarshalOpCodes['byte']:
+					unmarshaledList.append(self.unmarshal(data[currentByte:currentByte+2]))
+					currentByte += 2
+				# Two byte data
+				elif data[currentByte] == self.EVEMarshalOpCodes['short']:
+					unmarshaledList.append(self.unmarshal(data[currentByte:currentByte+3]))
+					currentByte += 3
+				# 4 byte
+				elif data[currentByte] == self.EVEMarshalOpCodes['long']:
+					unmarshaledList.append(self.unmarshal(data[currentByte:currentByte+5]))
+					currentByte += 5
+				# 8 byte
+				elif data[currentByte] == self.EVEMarshalOpCodes['longlong'] or data[currentByte] == self.EVEMarshalOpCodes['double']:
+					unmarshaledList.append(self.unmarshal(data[currentByte:currentByte+9]))
+					currentByte += 9
+
+				elif data[currentByte] == self.EVEMarshalOpCodes['longstring']:
+					stringData = bytearray()
+					for x in range(currentByte + 2, currentByte + data[currentByte + 1] + 2):
+						stringData += pack('B', data[x])
+					unmarshaledList.append(stringData.decode("utf-8"))
+					currentByte += len(stringData) + 2
+
+				elif data[currentByte] == self.EVEMarshalOpCodes['tuple']:
+					logging.error("Unmarhsaling tuple within tuple is not supported yet")
+
+				elif data[currentByte] == self.EVEMarshalOpCodes['dict']:
+					size = self.getMarshaledContainerSize(data[currentByte:])
+					unmarshaledList.append(self.unmarshal(data[currentByte:currentByte+size+1]))
+
+
+				element += 1
+			
+			return tuple(unmarshaledList)
+		else:
+			logging.error("Unknown marshal opcode: %s", data[0])
+
+	def getMarshaledContainerSize(self, data):
+		if data[0] == self.EVEMarshalOpCodes['tuple'] or data[0] == self.EVEMarshalOpCodes['dict']:
 			numElements = data[1]
 			tupleSize = 2
 			currentElement = 0
 
+			if (data[0] == self.EVEMarshalOpCodes['dict']):
+				numElements *= 2
+
 			while currentElement < numElements:
-				if data[tupleSize + 1] == self.EVEMarshalOpCodes['none'] or data[tupleSize + 1] == self.EVEMarshalOpCodes['minusone'] or data[tupleSize + 1] == self.EVEMarshalOpCodes['zetupleSize + 1ro'] or data[tupleSize + 1] == self.EVEMarshalOpCodes['one'] or data[tupleSize + 1] == self.EVEMarshalOpCodes['zerodouble']:
+				if data[tupleSize] == self.EVEMarshalOpCodes['none'] or data[tupleSize] == self.EVEMarshalOpCodes['minusone'] or data[tupleSize] == self.EVEMarshalOpCodes['zero'] or data[tupleSize] == self.EVEMarshalOpCodes['one'] or data[tupleSize] == self.EVEMarshalOpCodes['zerodouble']:
 					tupleSize += 1
-				elif data[tupleSize + 1] == self.EVEMarshalOpCodes['byte']:
+				elif data[tupleSize] == self.EVEMarshalOpCodes['byte']:
 					tupleSize += 2
-				elif data[tupleSize + 1] == self.EVEMarshalOpCodes['short']:
+				elif data[tupleSize] == self.EVEMarshalOpCodes['short']:
 					tupleSize += 3
-				elif data[tupleSize + 1] == self.EVEMarshalOpCodes['long']:
+				elif data[tupleSize] == self.EVEMarshalOpCodes['long']:
 					tupleSize += 5
-				elif data[tupleSize + 1] == self.EVEMarshalOpCodes['longlong'] or data[tupleSize + 1] == self.EVEMarshalOpCodes['double']:
+				elif data[tupleSize] == self.EVEMarshalOpCodes['longlong'] or data[tupleSize] == self.EVEMarshalOpCodes['double']:
 					tupleSize += 9
+				elif data[tupleSize] == self.EVEMarshalOpCodes['longstring'] or data[tupleSize] == self.EVEMarshalOpCodes['utf8string']:
+					tupleSize += data[tupleSize + 1] + 2
+				else:
+					logging.error("Unknown container opcode %s", data[tupleSize])
 
 				currentElement += 1
 

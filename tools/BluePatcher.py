@@ -1,4 +1,5 @@
 import io, shutil
+from tqdm import *
 
 matchBytes = bytearray.fromhex("2D FF FF FF 8B 4E 1C 8B  46 20 8B 55 1C 6A 00 6A 00 52 2B C1 50 8B 45 EC  51 50 B3 01 FF 15 18 41 2F 10 8B 4D EC 51 8B F8  FF 15 F4 40 2F 10 85 FF 0F 85")
 alreadyPatched = bytearray.fromhex("2D FF FF FF 8B 4E 1C 8B  46 20 8B 55 1C 6A 00 6A 00 52 2B C1 50 8B 45 EC  51 50 B3 01 FF 15 18 41 2F 10 8B 4D EC 51 8B F8  FF 15 F4 40 2F 10 85 FF 90 E9")
@@ -12,7 +13,7 @@ try:
 	print("Searching for match")
 	matchedBytes = 0
 	offset = -1
-	for byte in blueDLL:
+	for byte in tqdm(blueDLL):
 		if matchedBytes == 49:
 			break
 
@@ -24,7 +25,8 @@ try:
 		offset += 1
 
 	if matchedBytes != 49:
-		for byte in blueDLL:
+		print("No match found, checking if already patched")
+		for byte in tqdm(blueDLL):
 			if matchedBytes == 49:
 				break
 

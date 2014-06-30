@@ -1,0 +1,20 @@
+Top Priority:
+	* Refactor EVEMarshal to be more consistent, and less hacky
+	* Add remaining Op Codes for marshalling and unmarshalling
+	* Add support for unmarshaling tuples within tuples
+	* Add database
+	* Make the login system more organized and add logging and catches for failures
+	* Add support for client/server pinging
+
+Normal Priority:
+	* Create configuration system (ini, xml, etc.)
+	* Add console interaction (add player, send message, save, shutdown, etc.)
+	* Add console coloring for messages
+	* Add extensive documentation
+
+Low Priority:
+	* Reorganize into a better heierarchy
+		- db/
+		- dep/
+		- src/
+		- tools/
