@@ -1,4 +1,7 @@
-import EVEServer, logging, stacklesssocket, socket, stackless
+import logging, socket, stackless
+from dep import stacklesssocket
+
+import EVEServer
 
 def runServer(host, port):
 	global server

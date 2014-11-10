@@ -1,0 +1,5 @@
+#!/bin/sh
+
+STACKLESS_PATH=/usr/local/bin/python3.4
+
+$STACKLESS_PATH ../evemu/main.py

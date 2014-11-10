@@ -1,6 +1,6 @@
-import EVEmu, EVEServer
+import traceback, weakref, logging, stackless, socket
+from dep import stacklesssocket
 from EVEMarshal import *
-import traceback, weakref, logging, stackless, stacklesssocket, socket
 
 class EVEClient:
 	disconnected = False

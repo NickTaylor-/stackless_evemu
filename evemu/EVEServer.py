@@ -1,6 +1,6 @@
-import EVEmu
-from EVEClient import * 
-import traceback, weakref, logging, stackless, stacklesssocket, socket
+import traceback, weakref, logging, stackless, socket
+from dep import stacklesssocket
+import EVEClient
 
 class EVEServer:
 	def __init__(self, host, port):
