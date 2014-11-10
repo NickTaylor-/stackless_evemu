@@ -5,9 +5,9 @@ from EVEMarshal import *
 class EVEClient:
 	disconnected = False
 	marshal = EVEMarshal()
-	version = 170472, 399, 312337, 8.45, 805617, "EVE-TRANQUILITY@ccp", None
-
-	def __init__(self, clientSocket, clientAddress):
+	version = 170472, 320, 1234, 7.31, 360229, "EVE-TRANQUILITY@ccp", None
+ 	
+    def __init__(self, clientSocket, clientAddress):
 		logging.info("Connection established from %s", clientAddress)
 
 		self.clientSocket = clientSocket
@@ -53,15 +53,21 @@ class EVEClient:
 				logging.warning('%s: Unknown service: %s', self.clientAddress[0], packetData[0])
 
 	def write(self, data):
+        # Create packet header (7E 00 00 00 00)
 		writeData = pack('<b', 0x7E)
 		writeData += pack('<l', 0)
+        
+        # Marshal the data
 		writeData += self.marshal.marshal(data)
-		size = pack('<l', len(writeData))
+		
+        # Compute size of packet
+        size = pack('<l', len(writeData))
 		writeData = size + writeData
 
 		self.clientSocket.send(writeData)
 
 	def read(self):
+        # Get packet size (first 4 bytes), and packet header (next 5 bytes)
 		packetSize = unpack('<l', self.clientSocket.recv(4))[0]
 		packetHeader = self.clientSocket.recv(5)
 
